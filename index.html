@@ -322,7 +322,7 @@ function kitUpd(dt){
 
 /* ---------- girl with dragon wings ---------- */
 const SKIN='#fdf1ea',HAIR='#14101b';
-const GMSG=['Привет, цыплята!','Нажми на меня, и я облечу ферму!','У меня крылья дракона!','Какой чудесный день на ферме!'];
+const GMSG=['Привет, цыплятки!','Нажми на меня, и я облечу ферму!','У меня крылышки дракона!','Цыплятки, я вас люблю!','Какой чудесный день!'];
 const girl={x:720,y:700,tx:720,ty:700,lift:0,tlift:0,dir:1,state:'idle',timer:3,anim:0,flapPh:0,bubble:'Привет, цыплята!',bubbleT:4,msgT:12,msg:0,la:0,lc:null,moving:false};
 function girlSay(t,d=3.5){girl.bubble=t;girl.bubbleT=d}
 function girlUpd(dt){
@@ -662,58 +662,64 @@ function drawCookArm(fx,fy,bob,px,py){
 
 /* girl drawing */
 function drawWing(s,flap,folded){
-  ctx.save();ctx.translate(s*7,-76);ctx.rotate(-s*flap);
-  const k=folded?0.55:1;ctx.scale(s*k,k);
-  ctx.fillStyle='#4a1f6e';ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(28,-36);ctx.lineTo(80,-28);
+  ctx.save();ctx.translate(s*6,-48);ctx.rotate(-s*flap);
+  const k=(folded?0.55:1)*0.8;ctx.scale(s*k,k);
+  ctx.fillStyle='#ff7fbf';ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(28,-36);ctx.lineTo(80,-28);
   ctx.quadraticCurveTo(70,-14,66,-2);ctx.quadraticCurveTo(56,-6,50,6);ctx.quadraticCurveTo(40,0,34,12);ctx.quadraticCurveTo(22,4,12,10);ctx.closePath();ctx.fill();
-  ctx.fillStyle='rgba(170,100,220,.45)';ctx.beginPath();ctx.moveTo(4,0);ctx.lineTo(28,-30);ctx.lineTo(60,-24);ctx.quadraticCurveTo(46,-6,34,6);ctx.quadraticCurveTo(20,0,8,6);ctx.closePath();ctx.fill();
-  ctx.strokeStyle='#2b0f42';ctx.lineWidth=2.5;ctx.lineCap='round';ctx.beginPath();
+  ctx.fillStyle='rgba(255,214,235,.85)';ctx.beginPath();ctx.moveTo(4,0);ctx.lineTo(28,-30);ctx.lineTo(60,-24);ctx.quadraticCurveTo(46,-6,34,6);ctx.quadraticCurveTo(20,0,8,6);ctx.closePath();ctx.fill();
+  ctx.strokeStyle='#d94f94';ctx.lineWidth=3;ctx.lineCap='round';ctx.lineJoin='round';ctx.beginPath();
   ctx.moveTo(0,0);ctx.lineTo(28,-36);ctx.lineTo(80,-28);ctx.moveTo(28,-36);ctx.lineTo(66,-2);ctx.moveTo(28,-36);ctx.lineTo(50,6);ctx.moveTo(28,-36);ctx.lineTo(34,12);ctx.stroke();
-  ctx.fillStyle='#e9e2f2';ctx.beginPath();ctx.moveTo(28,-36);ctx.lineTo(24,-45);ctx.lineTo(33,-38);ctx.closePath();ctx.fill();
+  ctx.fillStyle='#fff4fb';ctx.beginPath();ctx.moveTo(28,-36);ctx.lineTo(25,-45);ctx.lineTo(33,-38);ctx.closePath();ctx.fill();
   ctx.restore();
 }
 function drawGirl(){
-  const g=girl,flying=g.lift>4,perch=g.state==='perch';
+  const g=girl,flying=g.lift>4,perch=g.state==='perch',happy=g.state==='show';
   ctx.save();ctx.translate(g.x,g.y);
-  if(!perch){const sh=1-Math.min(g.lift,200)/300;ell(0,0,22*sh,6*sh,'rgba(0,0,0,.2)')}
+  if(!perch){const sh=1-Math.min(g.lift,200)/300;ell(0,0,20*sh,5.5*sh,'rgba(0,0,0,.2)')}
   const hover=flying&&!perch?Math.sin(g.anim*4)*4:0;
   ctx.translate(0,-g.lift+hover);
   ctx.scale(g.dir,1);
   const amp=perch?0.05:flying?0.55:0.12,flap=Math.sin(g.flapPh)*amp+(flying&&!perch?0.1:0);
   drawWing(-1,flap,perch);drawWing(1,flap,perch);
   // long black hair (back)
-  ctx.fillStyle=HAIR;ctx.beginPath();ctx.moveTo(-17,-108);ctx.quadraticCurveTo(-28,-66,-17,-28);ctx.quadraticCurveTo(0,-22,17,-28);ctx.quadraticCurveTo(28,-66,17,-108);ctx.closePath();ctx.fill();
+  ctx.fillStyle=HAIR;ctx.beginPath();ctx.moveTo(-22,-84);ctx.quadraticCurveTo(-33,-46,-21,-16);ctx.quadraticCurveTo(0,-10,21,-16);ctx.quadraticCurveTo(33,-46,22,-84);ctx.closePath();ctx.fill();
   // legs + shoes
-  const stp=g.moving&&!flying?Math.sin(g.anim*12)*3:0;
-  ctx.fillStyle=SKIN;ctx.fillRect(-8,-30,6,27);ctx.fillRect(2,-30,6,27);
-  ell(-5+stp,-3,5.5,3,'#3b2347');ell(5-stp,-3,5.5,3,'#3b2347');
-  // dress
-  ctx.fillStyle='#2a9d8f';ctx.beginPath();ctx.moveTo(-11,-82);ctx.lineTo(11,-82);ctx.lineTo(21,-30);ctx.quadraticCurveTo(0,-24,-21,-30);ctx.closePath();ctx.fill();
-  ctx.fillStyle='#1d7c71';ctx.fillRect(-12,-62,24,4);
-  ctx.fillStyle='#ffffff';ctx.beginPath();ctx.moveTo(-7,-82);ctx.lineTo(0,-75);ctx.lineTo(7,-82);ctx.closePath();ctx.fill();
-  // arms
-  const ax=flying?28:17,ay=flying?-72:-50;
-  line(ctx,-10,-78,-ax,ay,SKIN,6);line(ctx,10,-78,ax,ay,SKIN,6);
-  ell(-ax,ay,3.6,3.6,SKIN);ell(ax,ay,3.6,3.6,SKIN);
-  // neck + head
-  ctx.fillStyle=SKIN;ctx.fillRect(-4,-87,8,7);
-  ell(0,-98,15,16,SKIN);ctx.strokeStyle='rgba(140,90,80,.35)';ctx.lineWidth=1;ctx.beginPath();ctx.ellipse(0,-98,15,16,0,0,7);ctx.stroke();
-  // hair top + bangs
-  ctx.fillStyle=HAIR;ctx.beginPath();ctx.arc(0,-100,16.5,Math.PI,Math.PI*2);
-  for(let i=0;i<=6;i++)ctx.lineTo(16.5-i*5.5,i%2?-95:-101);
-  ctx.closePath();ctx.fill();
-  for(const s of [-1,1]){ctx.beginPath();ctx.moveTo(s*16,-102);ctx.quadraticCurveTo(s*22,-78,s*18,-54);ctx.lineTo(s*11,-58);ctx.quadraticCurveTo(s*14,-80,s*12,-94);ctx.closePath();ctx.fill()}
-  // face
+  const stp=g.moving&&!flying?Math.sin(g.anim*12)*2.5:0;
+  ctx.fillStyle=SKIN;ctx.fillRect(-7,-21,5,19);ctx.fillRect(2,-21,5,19);
+  ell(-4.5+stp,-2.5,5,3,'#e8486b');ell(4.5-stp,-2.5,5,3,'#e8486b');
+  // pink dress with frill and heart
+  ctx.fillStyle='#ff8fb8';ctx.beginPath();ctx.moveTo(-9,-55);ctx.lineTo(9,-55);ctx.lineTo(19,-21);ctx.quadraticCurveTo(0,-16,-19,-21);ctx.closePath();ctx.fill();
+  ctx.fillStyle='#ffffff';for(let i=-3;i<=3;i++){ctx.beginPath();ctx.arc(i*5.6,-19.5,3,0,7);ctx.fill()}
+  ctx.fillStyle='#e8486b';heart(0,-48,3.4);
+  // arms (raised when flying)
+  const ax=flying?21:13,ay=flying?-60:-30;
+  line(ctx,-7,-51,-ax,ay,SKIN,5);line(ctx,7,-51,ax,ay,SKIN,5);
+  ell(-ax,ay,3.3,3.3,SKIN);ell(ax,ay,3.3,3.3,SKIN);
+  // big round head
+  ctx.fillStyle=SKIN;ctx.fillRect(-3.5,-58,7,5);
+  ell(0,-76,22,21,SKIN);ctx.strokeStyle='rgba(150,100,95,.3)';ctx.lineWidth=1;ctx.beginPath();ctx.ellipse(0,-76,22,21,0,0,7);ctx.stroke();
+  // hair top + rounded bangs
+  ctx.fillStyle=HAIR;ctx.beginPath();ctx.arc(0,-79,23,Math.PI,Math.PI*2);ctx.lineTo(20,-71);
+  const xs=[20,12,4,-4,-12,-20];for(let i=1;i<xs.length;i++)ctx.quadraticCurveTo((xs[i-1]+xs[i])/2,-81,xs[i],-71);
+  ctx.lineTo(-23,-79);ctx.closePath();ctx.fill();
+  for(const s of [-1,1]){ctx.beginPath();ctx.moveTo(s*22,-80);ctx.quadraticCurveTo(s*29,-54,s*22,-28);ctx.lineTo(s*15,-33);ctx.quadraticCurveTo(s*19,-56,s*16,-72);ctx.closePath();ctx.fill()}
+  ctx.strokeStyle='rgba(255,255,255,.35)';ctx.lineWidth=2.5;ctx.beginPath();ctx.arc(-4,-84,13,1.15*Math.PI,1.6*Math.PI);ctx.stroke();
+  // big sparkly eyes
   const closed=perch||Math.sin(g.anim*1.2)>0.97;
-  if(closed){for(const s of [-1,1]){ctx.strokeStyle='#2a1a2e';ctx.lineWidth=1.5;ctx.beginPath();ctx.arc(s*5.5,-93,2.4,0.15*Math.PI,0.85*Math.PI);ctx.stroke()}}
-  else for(const s of [-1,1]){ell(s*5.5,-92,2.3,2.9,'#2a1a2e');ell(s*5.5+0.8,-93.2,0.8,0.8,'#ffffff');line(ctx,s*5.5+s*2,-95,s*5.5+s*3.6,-96.6,'#2a1a2e',1.2)}
-  ell(-9,-87,3,1.8,'rgba(255,120,150,.45)');ell(9,-87,3,1.8,'rgba(255,120,150,.45)');
-  ctx.strokeStyle='#b04a5a';ctx.lineWidth=1.4;ctx.beginPath();ctx.arc(0,-88,3.4,0.15*Math.PI,0.85*Math.PI);ctx.stroke();
-  // little hair flower
-  ctx.fillStyle='#ff8fb8';for(let p=0;p<5;p++){const a=p*1.2566;ctx.beginPath();ctx.arc(11+Math.cos(a)*2.6,-109+Math.sin(a)*2.6,2,0,7);ctx.fill()}ell(11,-109,1.4,1.4,'#ffd23f');
+  for(const s of [-1,1]){
+    if(closed){ctx.strokeStyle='#2a1a2e';ctx.lineWidth=1.8;ctx.beginPath();ctx.arc(s*8,-70,3.6,0.15*Math.PI,0.85*Math.PI);ctx.stroke()}
+    else{ell(s*8,-69.5,4.3,5.6,'#2a1a2e');ell(s*8,-68.5,3.1,3.9,'#5b3a8a');ell(s*8+1.4,-72,1.7,1.7,'#ffffff');ell(s*8-1.3,-67.2,0.9,0.9,'#ffffff');line(ctx,s*11.8,-73.5,s*14.2,-75.6,'#2a1a2e',1.4)}
+    ell(s*13.5,-62.5,4,2.4,'rgba(255,110,150,.5)');
+  }
+  if(happy){ell(0,-61,2.6,2.2,'#c0485f')}
+  else{ctx.strokeStyle='#b04a5a';ctx.lineWidth=1.5;ctx.beginPath();ctx.arc(0,-63,2.8,0.15*Math.PI,0.85*Math.PI);ctx.stroke()}
+  // pink bow
+  ctx.fillStyle='#ff6fae';ctx.beginPath();ctx.moveTo(14,-95);ctx.lineTo(6,-101);ctx.lineTo(7,-89);ctx.closePath();ctx.fill();
+  ctx.beginPath();ctx.moveTo(14,-95);ctx.lineTo(22,-101);ctx.lineTo(21,-89);ctx.closePath();ctx.fill();ell(14,-95,2.6,2.6,'#e8486b');
   ctx.restore();
-  if(g.bubbleT>0)bubble(g.bubble,g.x,g.y-g.lift+hover-126,'#f3e9ff');
-  if(perch&&Math.random()<0.02)addP({type:'z',x:g.x+12,y:g.y-g.lift-120,vy:-16,vx:7,life:2.2,text:'z'});
+  if(g.bubbleT>0)bubble(g.bubble,g.x,g.y-g.lift+hover-108,'#ffeaf4');
+  if(perch&&Math.random()<0.02)addP({type:'z',x:g.x+12,y:g.y-g.lift-100,vy:-16,vx:7,life:2.2,text:'z'});
+  if(!perch&&!flying&&Math.random()<0.006)addP({type:'heart',x:g.x,y:g.y-110,vx:R(-10,10),vy:-30,life:1.2});
 }
 
 /* big sign */
@@ -910,7 +916,7 @@ function clickWorld(x,y){
     eggs.splice(i,1);const v=e.gold?25:3;st.coins+=v;st.eggs++;coinSnd();
     addP({type:'text',x:e.x,y:e.y-24,text:`+${v} 🪙`,color:e.gold?'#b07a00':'#6d3426',vy:-40,life:1.2});
     if(e.gold)toast('Золотое яйцо! +25 монет');renderHud();return}}
-  if(inRect(x,y,{x:girl.x-34,y:girl.y-girl.lift-128,w:68,h:130})){girlShow();return}
+  if(inRect(x,y,{x:girl.x-30,y:girl.y-girl.lift-104,w:60,h:106})){girlShow();return}
   let hit=null,bd=1e9;
   for(const c of chicks){const d=Math.hypot(c.x-x,c.y-(c.lift||0)-14*c.size-y);if(d<19*c.size&&d<bd){bd=d;hit=c}}
   if(hit){pet(hit);select(hit);return}
