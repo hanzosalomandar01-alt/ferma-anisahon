@@ -114,7 +114,7 @@ button.ghost{background:var(--panel)}
   </div>
 </aside>
 
-<div id="hint">Трава: бросить зерно · Цыплёнок: погладить · Кухня: Зарифхон сварит кашу · Карусель, качели, горка: покатать цыплят<span id="hintDrag"><br>Двигай поле, чтобы осмотреть всю ферму</span></div>
+<div id="hint">Трава: бросить зерно · Цыплёнок: погладить · Кухня: Зарифхон сварит кашу · Карусель, качели, горка: покатать цыплят · Девочка с крыльями: полёт над фермой<span id="hintDrag"><br>Двигай поле, чтобы осмотреть всю ферму</span></div>
 <div id="toast" role="status"></div>
 
 <script>
@@ -318,6 +318,44 @@ function kitUpd(dt){
     if(kit.bubbleT<=0){kit.msg=(kit.msg+1)%KMSG.length;kit.bubble=night()?'Спокойной ночи, цыплята!':KMSG[kit.msg];kit.bubbleT=6;if(Math.random()<.5)kit.wave=1.6}
   }
   kit.wave=Math.max(0,kit.wave-dt);
+}
+
+/* ---------- girl with dragon wings ---------- */
+const SKIN='#fdf1ea',HAIR='#14101b';
+const GMSG=['Привет, цыплята!','Нажми на меня, и я облечу ферму!','У меня крылья дракона!','Какой чудесный день на ферме!'];
+const girl={x:720,y:700,tx:720,ty:700,lift:0,tlift:0,dir:1,state:'idle',timer:3,anim:0,flapPh:0,bubble:'Привет, цыплята!',bubbleT:4,msgT:12,msg:0,la:0,lc:null,moving:false};
+function girlSay(t,d=3.5){girl.bubble=t;girl.bubbleT=d}
+function girlUpd(dt){
+  const g=girl;g.anim+=dt;g.moving=false;
+  const flying=g.state==='fly'||g.state==='show'||g.state==='toPerch'||g.lift>4;
+  g.flapPh+=dt*(flying?9:2.2);
+  g.bubbleT=Math.max(0,g.bubbleT-dt);
+  if(night()){
+    if(g.state!=='perch'){g.state='toPerch';g.tlift=238;
+      if(moveTo(g,SIGN.x,SIGN.y+2,170,dt)&&Math.abs(g.lift-238)<3){g.state='perch';girlSay('Спокойной ночи, цыплята!',4)}}
+    g.lift+=(g.tlift-g.lift)*Math.min(1,dt*2.5);
+    return;
+  }
+  if(g.state==='perch'||g.state==='toPerch'){g.state='fly';const p=randPt();g.tx=p.x;g.ty=p.y;g.tlift=120;girlSay('Доброе утро!',3)}
+  g.msgT-=dt;if(g.msgT<=0&&g.state!=='show'){g.msgT=R(10,16);g.msg=(g.msg+1)%GMSG.length;girlSay(GMSG[g.msg])}
+  switch(g.state){
+    case 'walk':g.tlift=0;if(moveTo(g,g.tx,g.ty,45,dt)){g.state='idle';g.timer=R(2,5)}break;
+    case 'fly':{const arrived=moveTo(g,g.tx,g.ty,150,dt);if(arrived){g.tlift=0;if(g.lift<2){g.state='idle';g.timer=R(2,5)}}break}
+    case 'show':{g.la+=dt*2.6;const c=g.lc;g.x=c.x+Math.cos(g.la)*130;g.y=c.y+Math.sin(g.la)*70;g.dir=-Math.sin(g.la)>=0?1:-1;g.tlift=170;
+      if(Math.random()<dt*25)addP({type:'spark',x:g.x+R(-30,30),y:g.y-g.lift-50+R(-20,20),vx:R(-20,20),vy:R(10,40),life:1.4,c:['#ffd23f','#ff8fb8','#c9a7ff','#ffffff'][Math.floor(R(0,4))]});
+      if(g.la>=Math.PI*2){g.state='fly';const p=randPt();g.tx=p.x;g.ty=p.y;g.tlift=60}break}
+    default:g.tlift=0;g.timer-=dt;
+      if(g.timer<=0){if(Math.random()<0.45){const p=randPt();g.tx=p.x;g.ty=p.y;g.tlift=R(90,150);g.state='fly'}else{const p=randNear(g);g.tx=p.x;g.ty=p.y;g.state='walk'}}
+  }
+  g.lift+=(g.tlift-g.lift)*Math.min(1,dt*2);
+  if(g.lift<1&&(g.state==='walk'||g.state==='idle'))pushOut(g);
+}
+function girlShow(){
+  const g=girl;
+  if(night()){girlSay('Сейчас ночь, я отдыхаю',3);return}
+  if(g.state==='show')return;
+  g.state='show';g.la=0;g.lc={x:clamp(g.x-130,200,WW-200),y:clamp(g.y,160,WH-100)};girlSay('Ура, полетели!',3);jingle();
+  for(const c of chicks)if(c.state!=='sleep'&&Math.hypot(c.x-g.x,c.y-g.y)<260){c.mood=Math.min(100,c.mood+20);c.hop=0.4;addP({type:'heart',x:c.x,y:c.y-36,vx:R(-12,12),vy:-40,life:1})}
 }
 
 /* ---------- particles ---------- */
@@ -622,6 +660,62 @@ function drawCookArm(fx,fy,bob,px,py){
   ell(hx,hy,6.5,6.5,'#e2a878');
 }
 
+/* girl drawing */
+function drawWing(s,flap,folded){
+  ctx.save();ctx.translate(s*7,-76);ctx.rotate(-s*flap);
+  const k=folded?0.55:1;ctx.scale(s*k,k);
+  ctx.fillStyle='#4a1f6e';ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(28,-36);ctx.lineTo(80,-28);
+  ctx.quadraticCurveTo(70,-14,66,-2);ctx.quadraticCurveTo(56,-6,50,6);ctx.quadraticCurveTo(40,0,34,12);ctx.quadraticCurveTo(22,4,12,10);ctx.closePath();ctx.fill();
+  ctx.fillStyle='rgba(170,100,220,.45)';ctx.beginPath();ctx.moveTo(4,0);ctx.lineTo(28,-30);ctx.lineTo(60,-24);ctx.quadraticCurveTo(46,-6,34,6);ctx.quadraticCurveTo(20,0,8,6);ctx.closePath();ctx.fill();
+  ctx.strokeStyle='#2b0f42';ctx.lineWidth=2.5;ctx.lineCap='round';ctx.beginPath();
+  ctx.moveTo(0,0);ctx.lineTo(28,-36);ctx.lineTo(80,-28);ctx.moveTo(28,-36);ctx.lineTo(66,-2);ctx.moveTo(28,-36);ctx.lineTo(50,6);ctx.moveTo(28,-36);ctx.lineTo(34,12);ctx.stroke();
+  ctx.fillStyle='#e9e2f2';ctx.beginPath();ctx.moveTo(28,-36);ctx.lineTo(24,-45);ctx.lineTo(33,-38);ctx.closePath();ctx.fill();
+  ctx.restore();
+}
+function drawGirl(){
+  const g=girl,flying=g.lift>4,perch=g.state==='perch';
+  ctx.save();ctx.translate(g.x,g.y);
+  if(!perch){const sh=1-Math.min(g.lift,200)/300;ell(0,0,22*sh,6*sh,'rgba(0,0,0,.2)')}
+  const hover=flying&&!perch?Math.sin(g.anim*4)*4:0;
+  ctx.translate(0,-g.lift+hover);
+  ctx.scale(g.dir,1);
+  const amp=perch?0.05:flying?0.55:0.12,flap=Math.sin(g.flapPh)*amp+(flying&&!perch?0.1:0);
+  drawWing(-1,flap,perch);drawWing(1,flap,perch);
+  // long black hair (back)
+  ctx.fillStyle=HAIR;ctx.beginPath();ctx.moveTo(-17,-108);ctx.quadraticCurveTo(-28,-66,-17,-28);ctx.quadraticCurveTo(0,-22,17,-28);ctx.quadraticCurveTo(28,-66,17,-108);ctx.closePath();ctx.fill();
+  // legs + shoes
+  const stp=g.moving&&!flying?Math.sin(g.anim*12)*3:0;
+  ctx.fillStyle=SKIN;ctx.fillRect(-8,-30,6,27);ctx.fillRect(2,-30,6,27);
+  ell(-5+stp,-3,5.5,3,'#3b2347');ell(5-stp,-3,5.5,3,'#3b2347');
+  // dress
+  ctx.fillStyle='#2a9d8f';ctx.beginPath();ctx.moveTo(-11,-82);ctx.lineTo(11,-82);ctx.lineTo(21,-30);ctx.quadraticCurveTo(0,-24,-21,-30);ctx.closePath();ctx.fill();
+  ctx.fillStyle='#1d7c71';ctx.fillRect(-12,-62,24,4);
+  ctx.fillStyle='#ffffff';ctx.beginPath();ctx.moveTo(-7,-82);ctx.lineTo(0,-75);ctx.lineTo(7,-82);ctx.closePath();ctx.fill();
+  // arms
+  const ax=flying?28:17,ay=flying?-72:-50;
+  line(ctx,-10,-78,-ax,ay,SKIN,6);line(ctx,10,-78,ax,ay,SKIN,6);
+  ell(-ax,ay,3.6,3.6,SKIN);ell(ax,ay,3.6,3.6,SKIN);
+  // neck + head
+  ctx.fillStyle=SKIN;ctx.fillRect(-4,-87,8,7);
+  ell(0,-98,15,16,SKIN);ctx.strokeStyle='rgba(140,90,80,.35)';ctx.lineWidth=1;ctx.beginPath();ctx.ellipse(0,-98,15,16,0,0,7);ctx.stroke();
+  // hair top + bangs
+  ctx.fillStyle=HAIR;ctx.beginPath();ctx.arc(0,-100,16.5,Math.PI,Math.PI*2);
+  for(let i=0;i<=6;i++)ctx.lineTo(16.5-i*5.5,i%2?-95:-101);
+  ctx.closePath();ctx.fill();
+  for(const s of [-1,1]){ctx.beginPath();ctx.moveTo(s*16,-102);ctx.quadraticCurveTo(s*22,-78,s*18,-54);ctx.lineTo(s*11,-58);ctx.quadraticCurveTo(s*14,-80,s*12,-94);ctx.closePath();ctx.fill()}
+  // face
+  const closed=perch||Math.sin(g.anim*1.2)>0.97;
+  if(closed){for(const s of [-1,1]){ctx.strokeStyle='#2a1a2e';ctx.lineWidth=1.5;ctx.beginPath();ctx.arc(s*5.5,-93,2.4,0.15*Math.PI,0.85*Math.PI);ctx.stroke()}}
+  else for(const s of [-1,1]){ell(s*5.5,-92,2.3,2.9,'#2a1a2e');ell(s*5.5+0.8,-93.2,0.8,0.8,'#ffffff');line(ctx,s*5.5+s*2,-95,s*5.5+s*3.6,-96.6,'#2a1a2e',1.2)}
+  ell(-9,-87,3,1.8,'rgba(255,120,150,.45)');ell(9,-87,3,1.8,'rgba(255,120,150,.45)');
+  ctx.strokeStyle='#b04a5a';ctx.lineWidth=1.4;ctx.beginPath();ctx.arc(0,-88,3.4,0.15*Math.PI,0.85*Math.PI);ctx.stroke();
+  // little hair flower
+  ctx.fillStyle='#ff8fb8';for(let p=0;p<5;p++){const a=p*1.2566;ctx.beginPath();ctx.arc(11+Math.cos(a)*2.6,-109+Math.sin(a)*2.6,2,0,7);ctx.fill()}ell(11,-109,1.4,1.4,'#ffd23f');
+  ctx.restore();
+  if(g.bubbleT>0)bubble(g.bubble,g.x,g.y-g.lift+hover-126,'#f3e9ff');
+  if(perch&&Math.random()<0.02)addP({type:'z',x:g.x+12,y:g.y-g.lift-120,vy:-16,vx:7,life:2.2,text:'z'});
+}
+
 /* big sign */
 const SIGN_BULBS=[];
 function drawSign(){
@@ -728,7 +822,7 @@ function draw(){
   for(const d of st.decor)items.push({y:d.y,f:()=>drawDecor(d)});
   for(const e of eggs)items.push({y:e.y,f:()=>drawEgg(e)});
   for(const c of chicks)if(c.state!=='ride')items.push({y:c.y,f:()=>drawChick(c)});
-  items.push({y:KIT.y+KIT.h,f:drawKitchen},{y:SIGN.y,f:drawSign},{y:CAR.y+CAR.ry,f:drawCarousel},{y:SW.y+8,f:drawSwings},{y:SL.y+14,f:drawSlide});
+  items.push({y:KIT.y+KIT.h,f:drawKitchen},{y:SIGN.y,f:drawSign},{y:CAR.y+CAR.ry,f:drawCarousel},{y:SW.y+8,f:drawSwings},{y:SL.y+14,f:drawSlide},{y:girl.y+(girl.lift>30?10000:0),f:drawGirl});
   items.sort((a,b)=>a.y-b.y);for(const it of items)it.f();
   if(sel)label(sel);
   for(const p of parts)if(p.type!=='z')drawP(p);
@@ -755,6 +849,7 @@ function label(c){
 function drawP(p){
   const a=1-p.t/p.life;ctx.globalAlpha=Math.max(0,a);
   if(p.type==='heart'){ctx.fillStyle='#e8486b';heart(p.x,p.y,7)}
+  else if(p.type==='spark'){const s=4*(1-p.t/p.life)+1.5;ctx.fillStyle=p.c;ctx.beginPath();ctx.moveTo(p.x,p.y-s*1.8);ctx.lineTo(p.x+s*0.5,p.y-s*0.5);ctx.lineTo(p.x+s*1.8,p.y);ctx.lineTo(p.x+s*0.5,p.y+s*0.5);ctx.lineTo(p.x,p.y+s*1.8);ctx.lineTo(p.x-s*0.5,p.y+s*0.5);ctx.lineTo(p.x-s*1.8,p.y);ctx.lineTo(p.x-s*0.5,p.y-s*0.5);ctx.closePath();ctx.fill()}
   else if(p.type==='steam'){ell(p.x,p.y,6+p.t*12,5+p.t*10,'rgba(255,255,255,.55)')}
   else if(p.type==='conf'){ctx.save();ctx.translate(p.x,p.y);ctx.rotate(p.r+p.t*p.vr);ctx.fillStyle=p.c;ctx.fillRect(-4,-2.5,8,5);ctx.restore()}
   else{const fs=p.type==='z'?uiFont(13):uiFont(16);ctx.font=`700 ${fs}px ${FONT_B}`;ctx.textAlign='center';ctx.textBaseline='middle';
@@ -772,6 +867,7 @@ function step(dt){
   st.time+=dt/DAY_LEN;if(st.time>=1){st.time-=1;st.day++;toast(`Наступил день ${st.day}. Доброе утро, ферма!`)}
   CAR.rot+=dt*(CAR.seats.some(c=>c&&c.state==='ride')?1.1:0.25);
   kitUpd(dt);
+  girlUpd(dt);
   for(const c of chicks)upd(c,dt);
   const walkers=chicks.filter(c=>c.state!=='ride');
   for(let i=0;i<walkers.length;i++)for(let j=i+1;j<walkers.length;j++){const a=walkers[i],b=walkers[j],min=8*(a.size+b.size),dx=b.x-a.x,dy=b.y-a.y,d2=dx*dx+dy*dy;
@@ -814,6 +910,7 @@ function clickWorld(x,y){
     eggs.splice(i,1);const v=e.gold?25:3;st.coins+=v;st.eggs++;coinSnd();
     addP({type:'text',x:e.x,y:e.y-24,text:`+${v} 🪙`,color:e.gold?'#b07a00':'#6d3426',vy:-40,life:1.2});
     if(e.gold)toast('Золотое яйцо! +25 монет');renderHud();return}}
+  if(inRect(x,y,{x:girl.x-34,y:girl.y-girl.lift-128,w:68,h:130})){girlShow();return}
   let hit=null,bd=1e9;
   for(const c of chicks){const d=Math.hypot(c.x-x,c.y-(c.lift||0)-14*c.size-y);if(d<19*c.size&&d<bd){bd=d;hit=c}}
   if(hit){pet(hit);select(hit);return}
@@ -911,7 +1008,7 @@ renderHud();
 window.addEventListener('resize',resize);
 document.addEventListener('visibilitychange',()=>{if(document.hidden)save()});
 if(document.fonts&&document.fonts.ready)document.fonts.ready.then(()=>{hudH=hud.offsetHeight;layout();buildBg()});
-window.__farm={get chicks(){return chicks},st,kit};
+window.__farm={get chicks(){return chicks},st,kit,girl};
 requestAnimationFrame(frame);
 })();
 </script>
